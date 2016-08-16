@@ -1,0 +1,31 @@
+{
+  "name": "ts-node-babel-sample",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "postinstall": "node lib/overwrite-modules.js",
+    "start": "ts-babel-node --ignoreWarnings 2304 server.ts",
+    "alt": "node --require ts-babel-node/registerserver.ts",    
+    "tsc": "tsc",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/lodash": "0.0.26-alpha",
+    "@types/node": "^4.0.28-alpha",
+    "babel-preset-es2015": "^6.9.0",
+    "dotenv": "^2.0.0",
+    "fs-extra": "^0.30.0",
+    "ts-babel-node": "^1.0.0",
+    "ts-node": "^0.9.3",
+    "typescript": "^2.0.0"
+  },
+  "dependencies": {
+    "babel-polyfill": "^6.9.1",
+    "cloudant": "^1.4.3",
+    "lodash": "^4.13.1"
+  }
+}
