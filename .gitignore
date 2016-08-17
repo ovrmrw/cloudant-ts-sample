@@ -39,3 +39,4 @@ jspm_packages
 typings
 .tscOutDir
 .env
+.dest*

@@ -6,8 +6,14 @@
   "scripts": {
     "postinstall": "node lib/overwrite-modules.js",
     "start": "ts-babel-node --ignoreWarnings 2304 server.ts",
-    "alt": "set TS_NODE_IGNORE_WARNINGS=2304 && node --require ts-babel-node/register server.ts",    
-    "tsc": "tsc",
+    "alt": "set TS_NODE_IGNORE_WARNINGS=2304 && node --require ts-babel-node/register server.ts",
+    "tsc": "tsc --outDir .dest-tsc",
+    "tsc:w": "tsc --outDir .dest-tsc --watch",
+    "babel": "babel .dest-tsc --out-dir .dest --presets es2015 --no-comments --minified",
+    "babel:w": "babel .dest-tsc --out-dir .dest --presets es2015 --no-comments --minified --watch",
+    "build": "npm run tsc && npm run babel",
+    "build:w": "concurrently -k \"npm run tsc:w\" \"npm run babel:w\" ",
+    "js": "node .dest/server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -16,7 +22,9 @@
   "devDependencies": {
     "@types/lodash": "0.0.26-alpha",
     "@types/node": "^4.0.28-alpha",
+    "babel-cli": "^6.11.4",
     "babel-preset-es2015": "^6.9.0",
+    "concurrently": "^2.2.0",
     "dotenv": "^2.0.0",
     "fs-extra": "^0.30.0",
     "ts-babel-node": "^1.0.0",
