@@ -3,18 +3,20 @@ import lodash from 'lodash'
 
 require('dotenv').load()
 
-const username: string = process.env.CLOUDANT_USERNAME || ''
-const password: string = process.env.CLOUDANT_PASSWORD || ''
+const account: string = process.env.CLOUDANT_USERNAME || ''
+const key: string = process.env.CLOUDANT_API_KEY || ''
+const password: string = process.env.CLOUDANT_API_PASSWORD || ''
 
 
 class CloudantController {
   cloudant: any;
 
-  constructor(account: string, password: string) {
+  constructor(account: string, key: string, password: string) {
     const Cloudant = require('cloudant')
-    this.cloudant = Cloudant({ account: username, password: password })
+    this.cloudant = Cloudant({ account, key, password })
   }
 
+  // NEEDS _admin permission
   createDatabase(dbname: string): Promise<{} | null> {
     return new Promise<{} | null>((resolve, reject) => {
       this.cloudant.db.create(dbname, (err, body, header) => {
@@ -30,6 +32,7 @@ class CloudantController {
     })
   }
 
+  // NEEDS _admin permission
   dropDatabase(dbname: string): Promise<{} | null> {
     return new Promise<{} | null>((resolve, reject) => {
       this.cloudant.db.destroy(dbname, (err, body, header) => {
@@ -75,7 +78,7 @@ class CloudantController {
           reject(null)
           return
         }
-        console.log('Select Document')
+        console.log('Get Document')
         console.log(data)
         resolve(data)
       })
@@ -118,23 +121,24 @@ class CloudantController {
 
 //////////////////////////////////////////////////////////////////////////////
 
-const ALICE = 'alice'
-const cc = new CloudantController(username, password);
+const DB = 'alice' // Database Name which you created.
+const cc = new CloudantController(account, key, password);
 
 
 (async () => {
-  await cc.dropDatabase(ALICE)
-  await cc.createDatabase(ALICE)
-  await cc.insertDocument<Alice>(ALICE, { crazy: true, a: 1, b: '2' }, 'rabbit')
-  let doc = await cc.getDocument<Alice>(ALICE, 'rabbit')
-  if (doc) {
-    doc.b = 'edited'
-    await cc.insertDocument<Alice>(ALICE, doc)
-    doc = await cc.getDocument<Alice>(ALICE, 'rabbit')
+  // await cc.dropDatabase(ALICE) // NEEDS _admin permission
+  // await cc.createDatabase(ALICE) // NEEDS _admin permission
+  const KEY = 'rabbit'
+  await cc.insertDocument<Alice>(DB, { crazy: true, a: 1, b: '2' }, KEY)
+  let document = await cc.getDocument<Alice>(DB, KEY)
+  if (document) {
+    document.b = 'edited'
+    await cc.insertDocument<Alice>(DB, document)
+    document = await cc.getDocument<Alice>(DB, KEY)
   }
-  if (doc) {
-    await cc.deleteDocument(ALICE, doc)
-    await cc.getDocument<Alice>(ALICE, 'rabbit') // ERROR
+  if (document) {
+    await cc.deleteDocument(DB, document)
+    await cc.getDocument<Alice>(DB, KEY) // MUST BE ERROR
   }
 })()
 
