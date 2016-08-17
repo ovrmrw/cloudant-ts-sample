@@ -17,9 +17,9 @@ class CloudantController {
   }
 
   // NEEDS _admin permission
-  createDatabase(dbname: string): Promise<{} | null> {
+  createDatabase(dbName: string): Promise<{} | null> {
     return new Promise<{} | null>((resolve, reject) => {
-      this.cloudant.db.create(dbname, (err, body, header) => {
+      this.cloudant.db.create(dbName, (err, body, header) => {
         if (err) {
           console.error(err)
           reject(null)
@@ -33,9 +33,9 @@ class CloudantController {
   }
 
   // NEEDS _admin permission
-  dropDatabase(dbname: string): Promise<{} | null> {
+  dropDatabase(dbName: string): Promise<{} | null> {
     return new Promise<{} | null>((resolve, reject) => {
-      this.cloudant.db.destroy(dbname, (err, body, header) => {
+      this.cloudant.db.destroy(dbName, (err, body, header) => {
         if (err) {
           console.error(err)
           reject(null)
@@ -48,14 +48,14 @@ class CloudantController {
     })
   }
 
-  private use(dbname: string): any {
-    return this.cloudant.db.use(dbname)
+  private use(dbName: string): any {
+    return this.cloudant.db.use(dbName)
   }
 
-  insertDocument<T>(dbname: string, obj: T, key?: string): Promise<{} | null> {
+  insertDocument<T>(dbName: string, insertObj: T, _id?: string): Promise<{} | null> {
     return new Promise<{} | null>((resolve, reject) => {
-      const db = this.use(dbname)
-      const temp = lodash.defaultsDeep<T, T>(obj, key ? { _id: key } : {})
+      const db = this.use(dbName)
+      const temp = lodash.defaultsDeep<T, T>(insertObj, _id ? { _id: _id } : {})
       db.insert(temp, (err, body, header) => {
         if (err) {
           console.error(err)
@@ -69,10 +69,10 @@ class CloudantController {
     })
   }
 
-  getDocument<T>(dbname: string, key: string): Promise<T | null> {
+  getDocument<T>(dbName: string, _id: string): Promise<T | null> {
     return new Promise<T | null>((resolve, reject) => {
-      const db = this.use(dbname)
-      db.get(key, (err, data, header) => {
+      const db = this.use(dbName)
+      db.get(_id, (err, data, header) => {
         if (err) {
           console.error(err)
           reject(null)
@@ -85,10 +85,10 @@ class CloudantController {
     })
   }
 
-  deleteDocument(dbname: string, obj: DbBase): Promise<{} | null> {
+  deleteDocument(dbName: string, deleteObj: DocumentBase): Promise<{} | null> {
     return new Promise<{} | null>((resolve, reject) => {
-      const db = this.use(dbname)
-      db.destroy(obj._id, obj._rev, (err, body, header) => {
+      const db = this.use(dbName)
+      db.destroy(deleteObj._id, deleteObj._rev, (err, body, header) => {
         if (err) {
           console.error(err)
           reject(null)
@@ -97,6 +97,22 @@ class CloudantController {
         console.log('Delete Document')
         console.log(body)
         resolve(body)
+      })
+    })
+  }
+
+  searchDocument<T>(dbName: string, designName: string, indexName: string, searchText: string): Promise<T | null> {
+    return new Promise<T | null>((resolve, reject) => {
+      const db = this.use(dbName)
+      db.search(designName, indexName, { q: searchText }, (err, result, header) => {
+        if (err) {
+          console.error(err)
+          reject(null)
+          return
+        }
+        console.log('Search Document')
+        console.log(result)
+        resolve(result)
       })
     })
   }
@@ -121,35 +137,67 @@ class CloudantController {
 
 //////////////////////////////////////////////////////////////////////////////
 
-const DB = 'alice' // Database Name which you created.
+// const DB = 'alice' // Database Name which you created.
 const cc = new CloudantController(account, key, password);
 
-
+/*
 (async () => {
   // await cc.dropDatabase(ALICE) // NEEDS _admin permission
   // await cc.createDatabase(ALICE) // NEEDS _admin permission
   const KEY = 'rabbit'
   await cc.insertDocument<Alice>(DB, { crazy: true, a: 1, b: '2' }, KEY)
-  let document = await cc.getDocument<Alice>(DB, KEY)
+  let document = await cc.getDocument<Alice & DocumentBase>(DB, KEY)
   if (document) {
     document.b = 'edited'
-    await cc.insertDocument<Alice>(DB, document)
-    document = await cc.getDocument<Alice>(DB, KEY)
+    await cc.insertDocument<Alice & DocumentBase>(DB, document)
+    document = await cc.getDocument<Alice & DocumentBase>(DB, KEY)
   }
   if (document) {
     await cc.deleteDocument(DB, document)
-    await cc.getDocument<Alice>(DB, KEY) // MUST BE ERROR
+    await cc.getDocument<Alice & DocumentBase>(DB, KEY) // MUST BE ERROR
   }
 })()
+*/
 
-
-interface DbBase {
+interface DocumentBase {
   _id?: string
   _rev?: string
 }
 
-interface Alice extends DbBase {
+interface Alice {
   crazy: boolean
   a: number
   b: string
+}
+
+//////////////////////////////////////////////////////////////////////////////
+
+const DB = 'mydb' // Database Name which you created.
+
+  ;
+(async () => {
+  console.time('time')
+  const result = await cc.searchDocument<SearchResult<MyDoc>>(DB, 'mydbdoc', 'mydbsearch', 'テキスト')
+  if (result) {
+    result.rows.forEach(row => console.log(row.fields))
+  }
+  console.timeEnd('time')
+})()
+
+
+interface MyDoc {
+  name: string
+  desc: string
+}
+
+interface SearchResult<T> {
+  total_rows: number
+  bookmark: string
+  rows: SearchResultRow<T>[]
+}
+
+interface SearchResultRow<T> {
+  id: string
+  order: number[]
+  fields: T
 }
